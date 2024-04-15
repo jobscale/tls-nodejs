@@ -81,6 +81,14 @@ class App {
       proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
       return;
     }
+    if (route.startsWith('put /')) {
+      proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
+      return;
+    }
+    if (route.startsWith('delete /')) {
+      proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
+      return;
+    }
     this.notfoundHandler(req, res);
   }
 
