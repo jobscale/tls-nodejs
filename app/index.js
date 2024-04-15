@@ -39,15 +39,19 @@ class App {
   }
 
   useLogging(req, res) {
-    const ts = new Date().toLocaleString();
+    const ts = new Date().toISOString();
     const progress = () => {
       const remoteIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       const { method, url } = req;
       const protocol = req.socket.encrypted ? 'https' : 'http';
       const headers = new Headers(req.headers);
-      const reqHHeaders = JSON.stringify(headers);
+      const host = headers.get('host');
       logger.info({
-        ts, remoteIp, protocol, method, url, headers: reqHHeaders,
+        ts,
+        req: JSON.stringify({
+          remoteIp, protocol, host, method, url,
+        }),
+        headers: JSON.stringify(Object.fromEntries(headers.entries())),
       });
     };
     progress();
