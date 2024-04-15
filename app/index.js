@@ -71,7 +71,7 @@ class App {
     const headers = new Headers(req.headers);
     const host = headers.get('host');
     const auth = headers.get('authorization');
-    if (!auth.startsWith('AWS4-HMAC-SHA256 Credential=')) {
+    if (!auth || !auth.startsWith('AWS4-HMAC-SHA256 Credential=')) {
       const e = createHttpError(403);
       res.writeHead(e.status, { 'Content-Type': 'text/plain' });
       res.end(e.message);
