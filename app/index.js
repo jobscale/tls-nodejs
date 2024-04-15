@@ -11,7 +11,8 @@ const silent = () => undefined;
 class App {
   useHeader(req, res) {
     const headers = new Headers(req.headers);
-    const origin = headers.get('origin') || `${req.protocol}://${headers.get('host')}`;
+    const protocol = req.socket.encrypted ? 'https' : 'http';
+    const origin = headers.get('origin') || `${protocol}://${headers.get('host')}`;
     res.setHeader('ETag', 'false');
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, HEAD');
@@ -21,7 +22,8 @@ class App {
   }
 
   usePublic(req, res) {
-    const { protocol, url } = req;
+    const { url } = req;
+    const protocol = req.socket.encrypted ? 'https' : 'http';
     const { pathname } = new URL(`${protocol}://${url}`);
     const filePath = path.join(process.cwd(), 'docs', pathname);
     try {
@@ -37,7 +39,8 @@ class App {
     const ts = new Date().toLocaleString();
     const progress = () => {
       const remoteIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      const { protocol, method, url } = req;
+      const { method, url } = req;
+      const protocol = req.socket.encrypted ? 'https' : 'http';
       const reqHHeaders = JSON.stringify(req.headers);
       logger.info({
         ts, remoteIp, protocol, method, url, headers: reqHHeaders,
@@ -55,7 +58,8 @@ class App {
 
   router(req, res) {
     const method = req.method.toLowerCase();
-    const { protocol, url } = req;
+    const { url } = req;
+    const protocol = req.socket.encrypted ? 'https' : 'http';
     const { pathname, searchParams } = new URL(`${protocol}://${url}`);
     const route = `${method} ${pathname}`;
     silent({ route, searchParams });
