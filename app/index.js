@@ -5,6 +5,8 @@ const createHttpError = require('http-errors');
 const httpProxy = require('http-proxy');
 const { logger } = require('@jobscale/logger');
 
+const { BACKEND, HEADERS } = process.env;
+
 const proxy = httpProxy.createProxyServer({ xfwd: true });
 const silent = () => undefined;
 
@@ -70,30 +72,37 @@ class App {
     const protocol = req.socket.encrypted ? 'https' : 'http';
     const headers = new Headers(req.headers);
     const host = headers.get('host');
-    const auth = headers.get('authorization');
-    if (!auth || !auth.startsWith('AWS4-HMAC-SHA256 Credential=')) {
-      const e = createHttpError(403);
-      res.writeHead(e.status, { 'Content-Type': 'text/plain' });
-      res.end(e.message);
-      return;
+    if (HEADERS) {
+      const checks = Object.entries(JSON.parse(HEADERS));
+      for (const check of checks) {
+        const [key, value] = check;
+        const auth = headers.get(key);
+        if (!auth || !auth.startsWith(value)) {
+          const e = createHttpError(403);
+          res.writeHead(e.status, { 'Content-Type': 'text/plain' });
+          res.end(e.message);
+          return;
+        }
+      }
     }
     const { pathname, searchParams } = new URL(`${protocol}://${host}${url}`);
     const route = `${method} ${pathname}`;
+    const target = BACKEND || 'http://lo-stack.x.jsx.jp:10456';
     silent({ route, searchParams });
     if (route.startsWith('get /')) {
-      proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
+      proxy.web(req, res, { target });
       return;
     }
     if (route.startsWith('post /')) {
-      proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
+      proxy.web(req, res, { target });
       return;
     }
     if (route.startsWith('put /')) {
-      proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
+      proxy.web(req, res, { target });
       return;
     }
     if (route.startsWith('delete /')) {
-      proxy.web(req, res, { target: 'http://lo-stack.x.jsx.jp:10456' });
+      proxy.web(req, res, { target });
       return;
     }
     this.notfoundHandler(req, res);

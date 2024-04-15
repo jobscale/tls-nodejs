@@ -16,5 +16,6 @@ module.exports = {
     'class-methods-use-this': 'off',
     'no-await-in-loop': 'off',
     'no-param-reassign': 'off',
+    'no-restricted-syntax': 'off',
   },
 };
