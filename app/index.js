@@ -5,7 +5,7 @@ const createHttpError = require('http-errors');
 const httpProxy = require('http-proxy');
 const { logger } = require('@jobscale/logger');
 
-const proxy = httpProxy.createProxyServer();
+const proxy = httpProxy.createProxyServer({ xfwd: true });
 const silent = () => undefined;
 
 class App {
