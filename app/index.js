@@ -70,6 +70,13 @@ class App {
     const protocol = req.socket.encrypted ? 'https' : 'http';
     const headers = new Headers(req.headers);
     const host = headers.get('host');
+    const auth = headers.get('authorization');
+    if (!auth.startsWith('AWS4-HMAC-SHA256 Credential=')) {
+      const e = createHttpError(403);
+      res.writeHead(e.status, { 'Content-Type': 'text/plain' });
+      res.end(e.message);
+      return;
+    }
     const { pathname, searchParams } = new URL(`${protocol}://${host}${url}`);
     const route = `${method} ${pathname}`;
     silent({ route, searchParams });
