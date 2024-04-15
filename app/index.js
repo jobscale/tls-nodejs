@@ -10,9 +10,10 @@ const silent = () => undefined;
 
 class App {
   useHeader(req, res) {
-    const headers = new Headers(req.headers);
     const protocol = req.socket.encrypted ? 'https' : 'http';
-    const origin = headers.get('origin') || `${protocol}://${headers.get('host')}`;
+    const headers = new Headers(req.headers);
+    const host = headers.get('host');
+    const origin = headers.get('origin') || `${protocol}://${host}`;
     res.setHeader('ETag', 'false');
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, HEAD');
@@ -24,7 +25,9 @@ class App {
   usePublic(req, res) {
     const { url } = req;
     const protocol = req.socket.encrypted ? 'https' : 'http';
-    const { pathname } = new URL(`${protocol}://${url}`);
+    const headers = new Headers(req.headers);
+    const host = headers.get('host');
+    const { pathname } = new URL(`${protocol}://${host}${url}`);
     const filePath = path.join(process.cwd(), 'docs', pathname);
     try {
       const buf = fs.readFileSync(filePath);
@@ -41,7 +44,8 @@ class App {
       const remoteIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       const { method, url } = req;
       const protocol = req.socket.encrypted ? 'https' : 'http';
-      const reqHHeaders = JSON.stringify(req.headers);
+      const headers = new Headers(req.headers);
+      const reqHHeaders = JSON.stringify(headers);
       logger.info({
         ts, remoteIp, protocol, method, url, headers: reqHHeaders,
       });
@@ -60,7 +64,9 @@ class App {
     const method = req.method.toLowerCase();
     const { url } = req;
     const protocol = req.socket.encrypted ? 'https' : 'http';
-    const { pathname, searchParams } = new URL(`${protocol}://${url}`);
+    const headers = new Headers(req.headers);
+    const host = headers.get('host');
+    const { pathname, searchParams } = new URL(`${protocol}://${host}${url}`);
     const route = `${method} ${pathname}`;
     silent({ route, searchParams });
     if (route.startsWith('get /')) {
