@@ -67,11 +67,7 @@ class App {
   }
 
   router(req, res) {
-    const method = req.method.toLowerCase();
-    const { url } = req;
-    const protocol = req.socket.encrypted ? 'https' : 'http';
     const headers = new Headers(req.headers);
-    const host = headers.get('host');
     if (HEADERS) {
       const checks = Object.entries(JSON.parse(HEADERS));
       for (const check of checks) {
@@ -85,26 +81,44 @@ class App {
         }
       }
     }
+    const method = req.method.toUpperCase();
+    const { url } = req;
+    const protocol = req.socket.encrypted ? 'https' : 'http';
+    const host = headers.get('host');
     const { pathname, searchParams } = new URL(`${protocol}://${host}${url}`);
     const route = `${method} ${pathname}`;
-    const target = BACKEND || 'http://lo-stack.x.jsx.jp:10456';
-    silent({ route, searchParams });
-    if (route.startsWith('get /')) {
+    const target = BACKEND;
+    logger.debug({ route, searchParams });
+
+    if (route.startsWith('GET /')) {
       proxy.web(req, res, { target });
       return;
     }
-    if (route.startsWith('post /')) {
+    if (route.startsWith('POST /')) {
       proxy.web(req, res, { target });
       return;
     }
-    if (route.startsWith('put /')) {
+    if (route.startsWith('PUT /')) {
       proxy.web(req, res, { target });
       return;
     }
-    if (route.startsWith('delete /')) {
+    if (route.startsWith('DELETE /')) {
       proxy.web(req, res, { target });
       return;
     }
+    if (route.startsWith('PATCH /')) {
+      proxy.web(req, res, { target });
+      return;
+    }
+    if (route.startsWith('OPTIONS /')) {
+      proxy.web(req, res, { target });
+      return;
+    }
+    if (route.startsWith('HEAD /')) {
+      proxy.web(req, res, { target });
+      return;
+    }
+
     this.notfoundHandler(req, res);
   }
 
