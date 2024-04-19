@@ -6,14 +6,14 @@ const httpProxy = require('http-proxy');
 const { logger } = require('@jobscale/logger');
 
 const { BACKEND, HEADERS } = process.env;
+const target = BACKEND;
 
 const proxy = httpProxy.createProxyServer({ xfwd: true });
-const silent = () => undefined;
 
 class App {
   useHeader(req, res) {
-    const protocol = req.socket.encrypted ? 'https' : 'http';
     const headers = new Headers(req.headers);
+    const protocol = req.socket.encrypted ? 'https' : 'http';
     const host = headers.get('host');
     const origin = headers.get('origin') || `${protocol}://${host}`;
     res.setHeader('ETag', 'false');
@@ -25,28 +25,45 @@ class App {
   }
 
   usePublic(req, res) {
+    const headers = new Headers(req.headers);
     const { url } = req;
     const protocol = req.socket.encrypted ? 'https' : 'http';
-    const headers = new Headers(req.headers);
     const host = headers.get('host');
     const { pathname } = new URL(`${protocol}://${host}${url}`);
-    const filePath = path.join(process.cwd(), 'docs', pathname);
-    try {
-      const buf = fs.readFileSync(filePath);
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end(buf);
-    } catch (e) {
-      silent(e.message);
-    }
+    const file = {
+      path: path.join(process.cwd(), 'docs', pathname),
+    };
+    const stats = fs.statSync(file.path);
+    if (stats.isDirectory()) file.path += 'index.html';
+    if (!fs.existsSync(file.path)) return false;
+    const mime = filePath => {
+      const ext = path.extname(filePath).toLowerCase();
+      if (['.png', '.jpeg', '.webp', '.gif'].includes(ext)) return `image/${ext}`;
+      if (['.jpg'].includes(ext)) return 'image/jpeg';
+      if (['.ico'].includes(ext)) return 'image/x-ico';
+      if (['.json'].includes(ext)) return 'application/json';
+      if (['.pdf'].includes(ext)) return 'application/pdf';
+      if (['.zip'].includes(ext)) return 'application/zip';
+      if (['.xml'].includes(ext)) return 'application/xml';
+      if (['.html', '.svg'].includes(ext)) return 'text/html';
+      if (['.js'].includes(ext)) return 'text/javascript';
+      if (['.css'].includes(ext)) return 'text/css';
+      if (['.txt', '.md'].includes(ext)) return 'text/plain';
+      return 'application/octet-stream';
+    };
+    const stream = fs.createReadStream(file.path);
+    res.writeHead(200, { 'Content-Type': mime(file.path) });
+    stream.pipe(res);
+    return true;
   }
 
   useLogging(req, res) {
     const ts = new Date().toISOString();
     const progress = () => {
-      const remoteIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const headers = new Headers(req.headers);
+      const remoteIp = req.get('X-Forwarded-For') || req.socket.remoteAddress;
       const { method, url } = req;
       const protocol = req.socket.encrypted ? 'https' : 'http';
-      const headers = new Headers(req.headers);
       const host = headers.get('host');
       logger.info({
         ts,
@@ -87,7 +104,6 @@ class App {
     const host = headers.get('host');
     const { pathname, searchParams } = new URL(`${protocol}://${host}${url}`);
     const route = `${method} ${pathname}`;
-    const target = BACKEND;
     logger.debug({ route, searchParams });
 
     if (route.startsWith('GET /')) {
@@ -134,16 +150,39 @@ class App {
     res.end(JSON.stringify({ message: e.message }));
   }
 
+  upgradeHandler(req, socket, head) {
+    const headers = new Headers(req.headers);
+    const upgrade = headers.get('upgrade');
+    logger.info({ url: req.url, upgrade });
+    if (req.url.startsWith('/')) {
+      proxy.ws(req, socket, head, { target });
+      return;
+    }
+    socket.destroy();
+  }
+
+  errorHandler(e, req, res) {
+    logger.error(e);
+    if (!res) return;
+    if (!e.status) e = createHttpError(500);
+    res.writeHead(e.status, { 'Content-Type': 'text/plain' });
+    res.end(e.message);
+  }
+
   start() {
     return (req, res) => {
-      this.useHeader(req, res);
-      this.usePublic(req, res);
-      this.useLogging(req, res);
-      this.router(req, res);
+      try {
+        this.useHeader(req, res);
+        if (this.usePublic(req, res)) return;
+        this.useLogging(req, res);
+        this.router(req, res);
+      } catch (e) {
+        this.errorHandler(e, req, res);
+      }
     };
   }
 }
 
-module.exports = {
-  app: new App().start(),
-};
+const app = new App();
+app.app = app.start();
+module.exports = app;
