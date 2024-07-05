@@ -1,7 +1,7 @@
 {
-  "name": "reverse-proxy",
+  "name": "tls-nodejs",
   "version": "0.0.1",
-  "description": "reverse-proxy",
+  "description": "tls-nodejs",
   "main": "index.js",
   "scripts": {
     "start": "node .",
@@ -10,11 +10,10 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@jobscale/logger": "^0.6.0",
-    "http-errors": "^2.0.0",
-    "http-proxy": "^1.18.1"
+    "http-errors": "^2.0.0"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

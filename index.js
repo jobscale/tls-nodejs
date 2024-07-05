@@ -1,12 +1,13 @@
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const { logger } = require('@jobscale/logger');
-const { app, upgradeHandler, errorHandler } = require('./app');
+const { app, errorHandler } = require('./app');
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number.parseInt(process.env.PORT, 10) || 3000;
 
-const main = async () => {
+const httpServer = () => {
   const server = http.createServer(app);
-  server.on('upgrade', upgradeHandler);
   server.on('error', errorHandler);
   const options = {
     host: '0.0.0.0',
@@ -18,6 +19,29 @@ const main = async () => {
       'Listen on': `http://127.0.0.1:${options.port}`,
     }, null, 2));
   });
+};
+
+const httpsServer = () => {
+  const server = https.createServer({
+    cert: fs.readFileSync('jsx.jp/fullchain.pem'),
+    key: fs.readFileSync('jsx.jp/privkey.pem'),
+  }, app);
+  server.on('error', errorHandler);
+  const options = {
+    host: '0.0.0.0',
+    port: PORT + 1,
+  };
+  server.listen(options, () => {
+    logger.info(JSON.stringify({
+      Server: 'Started',
+      'Listen on': `https://127.0.0.1:${options.port}`,
+    }, null, 2));
+  });
+};
+
+const main = async () => {
+  httpServer();
+  httpsServer();
   return app;
 };
 

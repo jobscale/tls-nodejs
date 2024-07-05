@@ -2,13 +2,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const createHttpError = require('http-errors');
-const httpProxy = require('http-proxy');
 const { logger } = require('@jobscale/logger');
-
-const { BACKEND, HEADERS } = process.env;
-const target = BACKEND;
-
-const proxy = httpProxy.createProxyServer({ xfwd: true });
 
 class App {
   useHeader(req, res) {
@@ -86,19 +80,6 @@ class App {
 
   router(req, res) {
     const headers = new Headers(req.headers);
-    if (HEADERS) {
-      const checks = Object.entries(JSON.parse(HEADERS));
-      for (const check of checks) {
-        const [key, value] = check;
-        const auth = headers.get(key);
-        if (!auth || !auth.startsWith(value)) {
-          const e = createHttpError(403);
-          res.writeHead(e.status, { 'Content-Type': 'text/plain' });
-          res.end(e.message);
-          return;
-        }
-      }
-    }
     const method = req.method.toUpperCase();
     const { url } = req;
     const protocol = req.socket.encrypted ? 'https' : 'http';
@@ -108,31 +89,7 @@ class App {
     logger.debug({ route, searchParams });
 
     if (route.startsWith('GET /')) {
-      proxy.web(req, res, { target });
-      return;
-    }
-    if (route.startsWith('POST /')) {
-      proxy.web(req, res, { target });
-      return;
-    }
-    if (route.startsWith('PUT /')) {
-      proxy.web(req, res, { target });
-      return;
-    }
-    if (route.startsWith('DELETE /')) {
-      proxy.web(req, res, { target });
-      return;
-    }
-    if (route.startsWith('PATCH /')) {
-      proxy.web(req, res, { target });
-      return;
-    }
-    if (route.startsWith('OPTIONS /')) {
-      proxy.web(req, res, { target });
-      return;
-    }
-    if (route.startsWith('HEAD /')) {
-      proxy.web(req, res, { target });
+      res.end('Hi');
       return;
     }
 
@@ -149,17 +106,6 @@ class App {
     const e = createHttpError(501);
     res.writeHead(e.status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ message: e.message }));
-  }
-
-  upgradeHandler(req, socket, head) {
-    const headers = new Headers(req.headers);
-    const upgrade = headers.get('upgrade');
-    logger.info({ url: req.url, upgrade });
-    if (req.url.startsWith('/')) {
-      proxy.ws(req, socket, head, { target });
-      return;
-    }
-    socket.destroy();
   }
 
   errorHandler(e, req, res) {

@@ -1,4 +1,4 @@
-# reverse-proxy
+# tls-nodejs
 
 ## linting
 
@@ -20,15 +20,15 @@ npm start
 
 ## example container
 ```
-git clone https://github.com/jobscale/reverse-proxy.git
-cd reverse-proxy
+git clone https://github.com/jobscale/tls-nodejs.git
+cd tls-nodejs
 main() {
   delayOpen() {
     sleep 3
     xdg-open http://127.0.0.1:3000
   }
-  docker build . -t local/whoami
+  docker build . -t local/tls-nodejs
   delayOpen &
-  docker run --rm --name reverse-proxy -p 3000:3000 -it local/reverse-proxy
+  docker run --rm --name tls-nodejs -p 3000:3000 -it local/tls-nodejs
 } && main
 ```
