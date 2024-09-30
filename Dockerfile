@@ -1,4 +1,5 @@
 FROM node:lts-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends certbot && apt-get clean
 WORKDIR /home/node
 USER node
 COPY --chown=node:staff package.json .
