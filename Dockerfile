@@ -1,4 +1,4 @@
-FROM node:lts-tixie-slim
+FROM node:lts-trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends certbot && apt-get clean
 WORKDIR /home/node
