@@ -1,8 +1,8 @@
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const createHttpError = require('http-errors');
-const { logger } = require('@jobscale/logger');
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+import createHttpError from 'http-errors';
+import { logger } from '@jobscale/logger';
 
 class App {
   useHeader(req, res) {
@@ -130,6 +130,5 @@ class App {
   }
 }
 
-const app = new App();
-app.app = app.start();
-module.exports = app;
+export const app = new App().start();
+export const { errorHandler } = app;
