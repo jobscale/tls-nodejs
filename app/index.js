@@ -131,4 +131,3 @@ class App {
 }
 
 export const app = new App().start();
-export const { errorHandler } = app;
