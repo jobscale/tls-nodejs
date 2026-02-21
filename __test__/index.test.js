@@ -44,11 +44,14 @@ describe('App class (app/index.js)', () => {
       expect(typeof appFn).toBe('function');
     });
 
-    it('GET / に応答して "Hi" を返す', () => new Promise(resolve => {
+    it('GET / に応答して html を返す', () => new Promise(resolve => {
       const req = makeReq({ method: 'GET', url: '/' });
       const res = makeRes();
       res.end.mockImplementation(body => {
-        expect(body).toBe('Hi');
+        expect(res.writeHead).toHaveBeenCalledWith(
+          200, expect.objectContaining({ 'Content-Type': 'text/html' }),
+        );
+        expect(body).toMatch(/<\w+[\s\S]*?>/);
         resolve();
       });
       appFn(req, res);
@@ -95,12 +98,14 @@ describe('App class (app/index.js)', () => {
       appFn(req, res);
     }));
 
-    it('GET は router で "Hi" を返す', () => new Promise(resolve => {
+    it('GET は router で plain text を返す', () => new Promise(resolve => {
       const req = makeReq({ method: 'GET', url: '/any-path' });
       const res = makeRes();
       res.end.mockImplementation(body => {
-        // router は GET で始まる全パスに "Hi" を返す
-        expect(body).toBe('Hi');
+        expect(res.writeHead).toHaveBeenCalledWith(
+          404, expect.objectContaining({ 'Content-Type': 'text/plain' }),
+        );
+        expect(body).toMatch(/\w+/);
         resolve();
       });
       appFn(req, res);
@@ -158,7 +163,10 @@ describe('App class (app/index.js)', () => {
       const req = makeReq({ method: 'GET', url: '/no-such-file.txt' });
       const res = makeRes();
       res.end.mockImplementation(body => {
-        expect(body).toBe('Hi');
+        expect(res.writeHead).toHaveBeenCalledWith(
+          404, expect.objectContaining({ 'Content-Type': 'text/plain' }),
+        );
+        expect(body).toMatch(/\w+/);
         resolve();
       });
       appFn(req, res);

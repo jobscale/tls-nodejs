@@ -4,6 +4,17 @@ import fs from 'fs';
 import createHttpError from 'http-errors';
 import { logger } from '@jobscale/logger';
 
+const style = `<style>
+:root {
+  color-scheme: dark light;
+}
+body {
+  display: grid;
+  justify-content: center;
+  align-items: center;
+}
+</style>`;
+
 class App {
   useHeader(req, res) {
     const headers = new Headers(req.headers);
@@ -88,8 +99,9 @@ class App {
     const route = `${method} ${pathname}`;
     logger.debug({ route, searchParams });
 
-    if (route.startsWith('GET /')) {
-      res.end('Hi');
+    if (route === 'GET /') {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(`${style}<main><h1>Special ECO System</h1></main>`);
       return;
     }
 
