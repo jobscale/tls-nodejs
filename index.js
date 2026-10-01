@@ -1,7 +1,7 @@
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
-import { logger } from '@jobscale/logger';
+import { logger } from '@jobscale/create-logger';
 import { app } from './app/index.js';
 
 const BIND = process.env.BIND || '0.0.0.0';

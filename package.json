@@ -1,6 +1,7 @@
 {
+  "private": true,
   "name": "tls-nodejs",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "tls-nodejs",
   "keywords": [],
   "author": "",
@@ -15,7 +16,7 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --coverage --collectCoverage --verbose"
   },
   "dependencies": {
-    "@jobscale/logger": "^0.10.5",
+    "@jobscale/create-logger": "^1.0.5",
     "http-errors": "^2.0.1"
   },
   "devDependencies": {

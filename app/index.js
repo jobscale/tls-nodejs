@@ -2,7 +2,7 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import createHttpError from 'http-errors';
-import { logger } from '@jobscale/logger';
+import { logger } from '@jobscale/create-logger';
 
 const style = `<style>
 :root {
