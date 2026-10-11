@@ -23,8 +23,8 @@ const httpServer = () => {
 
 const httpsServer = () => {
   const server = https.createServer({
-    cert: fs.readFileSync('jsx.jp/fullchain.pem'),
-    key: fs.readFileSync('jsx.jp/privkey.pem'),
+    cert: fs.readFileSync('certs/jsx.jp/fullchain.pem'),
+    key: fs.readFileSync('certs/jsx.jp/privkey.pem'),
   }, app);
   server.on('error', swallow);
   server.listen(SPORT, BIND, () => {
@@ -41,4 +41,8 @@ const main = async () => {
   return app;
 };
 
-export default main();
+export default main().catch(e => {
+  logger.info({ error: e.cause?.message ?? e.cause ?? e.message });
+  logger.error(e.cause?.message ?? e.cause ?? e.message);
+  process.exit(1);
+});

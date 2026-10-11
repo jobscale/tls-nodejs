@@ -1,10 +1,10 @@
 {
   "private": true,
   "name": "tls-nodejs",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "tls-nodejs",
   "keywords": [],
-  "author": "",
+  "author": "jobscale <jobscale@users.noreply.github.com>",
   "license": "MIT",
   "type": "module",
   "main": "index.js",
