@@ -2,7 +2,7 @@ import http from 'http';
 import https from 'https';
 import fs from 'fs';
 import { logger } from '@jobscale/create-logger';
-import { app } from './app/index.js';
+import { app, upgradeHandler } from './app/index.js';
 
 const BIND = process.env.BIND || '0.0.0.0';
 const PORT = Number.parseInt(process.env.PORT, 10) || 3000;
@@ -12,6 +12,7 @@ const swallow = e => logger.error(JSON.stringify({ 'server error': e }));
 
 const httpServer = () => {
   const server = http.createServer(app);
+  server.on('upgrade', upgradeHandler);
   server.on('error', swallow);
   server.listen(PORT, BIND, () => {
     logger.info(JSON.stringify({
@@ -26,6 +27,7 @@ const httpsServer = () => {
     cert: fs.readFileSync('certs/jsx.jp/fullchain.pem'),
     key: fs.readFileSync('certs/jsx.jp/privkey.pem'),
   }, app);
+  server.on('upgrade', upgradeHandler);
   server.on('error', swallow);
   server.listen(SPORT, BIND, () => {
     logger.info(JSON.stringify({

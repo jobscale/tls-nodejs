@@ -2,18 +2,19 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import createHttpError from 'http-errors';
+import httpProxy from 'http-proxy';
 import { logger } from '@jobscale/create-logger';
 
-const style = `<style>
-:root {
-  color-scheme: dark light;
-}
-body {
-  display: grid;
-  justify-content: center;
-  align-items: center;
-}
-</style>`;
+const reverseMap = new Map();
+const loadReverse = () => {
+  const data = fs.readFileSync('reverse/backend.db', 'utf-8');
+  data.split('\n').forEach(reverse => {
+    const [host, backend] = reverse.split('=').map(v => v.trim());
+    reverseMap.set(host, backend);
+  });
+};
+
+const proxy = httpProxy.createProxyServer({ xfwd: true });
 
 class App {
   useHeader(req, res) {
@@ -44,7 +45,7 @@ class App {
     if (!fs.existsSync(file.path)) return false;
     const mime = filePath => {
       const ext = path.extname(filePath).toLowerCase();
-      if (['.png', '.jpeg', '.webp', '.gif'].includes(ext)) return `image/${ext}`;
+      if (['.png', '.jpeg', '.webp', '.gif'].includes(ext)) return `image/${ext.slice(1)}`;
       if (['.jpg'].includes(ext)) return 'image/jpeg';
       if (['.ico'].includes(ext)) return 'image/x-ico';
       if (['.json'].includes(ext)) return 'application/json';
@@ -89,20 +90,50 @@ class App {
     });
   }
 
+  pathAll(req, res, route, target, uri) {
+    if (route.startsWith(`GET ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    if (route.startsWith(`POST ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    if (route.startsWith(`PUT ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    if (route.startsWith(`DELETE ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    if (route.startsWith(`PATCH ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    if (route.startsWith(`OPTIONS ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    if (route.startsWith(`HEAD ${uri}`)) {
+      proxy.web(req, res, { target });
+      return true;
+    }
+    return false;
+  }
+
   router(req, res) {
     const headers = new Headers(req.headers);
     const method = req.method.toUpperCase();
-    const { url } = req;
     const protocol = req.socket.encrypted ? 'https' : 'http';
     const host = headers.get('host');
-    const { pathname, searchParams } = new URL(`${protocol}://${host}${url}`);
+    const { hostname, pathname, searchParams } = new URL(`${protocol}://${host}${req.url}`);
     const route = `${method} ${pathname}`;
     logger.debug({ route, searchParams });
 
-    if (route === 'GET /') {
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end(`${style}<main><h1>Special ECO System</h1></main>`);
-      return;
+    if (reverseMap.has(hostname)) {
+      const backend = reverseMap.get(hostname);
+      if (this.pathAll(req, res, route, backend, '/')) return;
     }
 
     this.notfoundHandler(req, res);
@@ -120,6 +151,21 @@ class App {
     res.end(JSON.stringify({ message: e.message }));
   }
 
+  upgradeHandler(req, socket, head) {
+    const headers = new Headers(req.headers);
+    const protocol = req.socket.encrypted ? 'https' : 'http';
+    const host = headers.get('host');
+    const { hostname } = new URL(`${protocol}://${host}${req.url}`);
+    const upgrade = headers.get('upgrade');
+    logger.info({ url: req.url, upgrade });
+    if (reverseMap.has(hostname)) {
+      const backend = reverseMap.get(hostname);
+      proxy.ws(req, socket, head, { target: backend });
+      return;
+    }
+    socket.destroy();
+  }
+
   errorHandler(e, req, res) {
     logger.error(e);
     if (!res) return;
@@ -129,6 +175,7 @@ class App {
   }
 
   start() {
+    loadReverse();
     return (req, res) => {
       try {
         this.useHeader(req, res);
@@ -142,4 +189,7 @@ class App {
   }
 }
 
-export const app = new App().start();
+const instance = new App();
+instance.app = instance.start();
+export const { app, upgradeHandler, errorHandler } = instance;
+export default instance;
